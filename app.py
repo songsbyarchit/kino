@@ -1,16 +1,15 @@
 from flask import Flask, request
-import requests
-import os
 from dotenv import load_dotenv
+from cards.homepage import get_homepage_card
+from utils.webex import send_card
+import os, requests
 
 load_dotenv()
 WEBEX_TOKEN = os.getenv("WEBEX_BOT_TOKEN")
-
-BOT_INFO = requests.get(
+BOT_ID = requests.get(
     "https://webexapis.com/v1/people/me",
     headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
-).json()
-BOT_ID = BOT_INFO["id"]
+).json()["id"]
 
 app = Flask(__name__)
 
@@ -18,20 +17,11 @@ app = Flask(__name__)
 def messages():
     data = request.json
     if data["resource"] == "messages" and data["event"] == "created":
-        message_id = data["data"]["id"]
         sender_id = data["data"]["personId"]
+        room_id = data["data"]["roomId"]
 
         if sender_id != BOT_ID:
-            message = requests.get(
-                f"https://webexapis.com/v1/messages/{message_id}",
-                headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
-            ).json()["text"]
-
-            requests.post(
-                "https://webexapis.com/v1/messages",
-                json={"roomId": data["data"]["roomId"], "text": f"You said: {message}"},
-                headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
-            )
+            send_card(room_id, get_homepage_card(), markdown="Welcome to Kino")
     return "OK"
 
 if __name__ == "__main__":
