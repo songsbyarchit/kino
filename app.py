@@ -6,6 +6,12 @@ from dotenv import load_dotenv
 load_dotenv()
 WEBEX_TOKEN = os.getenv("WEBEX_BOT_TOKEN")
 
+BOT_INFO = requests.get(
+    "https://webexapis.com/v1/people/me",
+    headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
+).json()
+BOT_ID = BOT_INFO["id"]
+
 app = Flask(__name__)
 
 @app.route("/messages", methods=["POST"])
@@ -13,9 +19,9 @@ def messages():
     data = request.json
     if data["resource"] == "messages" and data["event"] == "created":
         message_id = data["data"]["id"]
-        sender = data["data"]["personEmail"]
+        sender_id = data["data"]["personId"]
 
-        if sender != "your-bot-email@webex.bot":
+        if sender_id != BOT_ID:
             message = requests.get(
                 f"https://webexapis.com/v1/messages/{message_id}",
                 headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
@@ -27,3 +33,6 @@ def messages():
                 headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
             )
     return "OK"
+
+if __name__ == "__main__":
+    app.run(debug=True)
