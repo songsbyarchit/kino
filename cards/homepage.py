@@ -33,7 +33,7 @@ def get_homepage_card():
             {
                 "type": "ActionSet",
                 "actions": [
-                    {"type": "Action.Submit", "title": "Try a feature", "data": {"action": "help"}}
+                    {"type": "Action.Submit", "title": "Try a feature", "data": {"action": "show_features"}}
                 ]
             }
         ]
