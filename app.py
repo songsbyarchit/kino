@@ -71,21 +71,38 @@ def messages():
 
             response_text = fixed_responses.get(action_type, "Sorry, I didn’t understand that action.")
 
-            send_card(
-                room_id,
-                {
-                    "type": "AdaptiveCard",
-                    "version": "1.2",
-                    "body": [
-                        {
-                            "type": "TextBlock",
-                            "text": response_text,
-                            "wrap": True
-                        }
-                    ]
-                },
-                markdown="Here’s your result"
-            )
+        send_card(
+            room_id,
+            {
+                "type": "AdaptiveCard",
+                "version": "1.2",
+                "body": [
+                    {
+                        "type": "TextBlock",
+                        "text": response_text,
+                        "wrap": True
+                    },
+                    {
+                        "type": "ActionSet",
+                        "actions": [
+                            {
+                                "type": "Action.OpenUrl",
+                                "title": "Watch on YouTube",
+                                "url": {
+                                            "music": "https://www.youtube.com/watch?v=5qap5aO4i9A",        # Lo-fi beats
+                                            "reword": "https://www.youtube.com/watch?v=v4GpJxLaIvY",       # AI writing tools overview
+                                            "docs": "https://www.youtube.com/watch?v=HXV3zeQKqGY",         # Google tips & search operators
+                                            "diagram": "https://www.youtube.com/watch?v=sF7h0QEVZ2I",      # Miro sketching tutorial
+                                            "voice": "https://www.youtube.com/watch?v=WDvS8pydYOg"         # Voice journaling for productivity
+                                        }
+                                        .get(action_type, "https://www.youtube.com")
+                            }
+                        ]
+                    }
+                ]
+            },
+            markdown="Here’s your result"
+        )
     return "OK"
 
 if __name__ == "__main__":
