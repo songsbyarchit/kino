@@ -60,7 +60,32 @@ def messages():
 
         if action_type == "show_features":
             send_card(room_id, get_feature_selector_card(), markdown="Choose a feature")
+        else:
+            fixed_responses = {
+                "music": "🎵 Great choice! Here's a focus playlist: https://example.com/focus-music",
+                "reword": "📚 Drop your text in the chat, and I’ll help reword it for clarity.",
+                "docs": "🔍 Let’s look up the official documentation. What topic do you need help with?",
+                "diagram": "✏️ Ready to sketch. Describe what you want visualised.",
+                "voice": "🎙️ Voice mode isn’t ready yet—but you’ll be able to speak to Kino soon!"
+            }
 
+            response_text = fixed_responses.get(action_type, "Sorry, I didn’t understand that action.")
+
+            send_card(
+                room_id,
+                {
+                    "type": "AdaptiveCard",
+                    "version": "1.2",
+                    "body": [
+                        {
+                            "type": "TextBlock",
+                            "text": response_text,
+                            "wrap": True
+                        }
+                    ]
+                },
+                markdown="Here’s your result"
+            )
     return "OK"
 
 if __name__ == "__main__":
