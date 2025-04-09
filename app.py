@@ -60,49 +60,87 @@ def messages():
 
         if action_type == "show_features":
             send_card(room_id, get_feature_selector_card(), markdown="Choose a feature")
-        else:
-            fixed_responses = {
-                "music": "🎵 Great choice! Here's a focus playlist: https://example.com/focus-music",
-                "reword": "📚 Drop your text in the chat, and I’ll help reword it for clarity.",
-                "docs": "🔍 Let’s look up the official documentation. What topic do you need help with?",
-                "diagram": "✏️ Ready to sketch. Describe what you want visualised.",
-                "voice": "🎙️ Voice mode isn’t ready yet—but you’ll be able to speak to Kino soon!"
-            }
-
-            response_text = fixed_responses.get(action_type, "Sorry, I didn’t understand that action.")
-
-        send_card(
-            room_id,
-            {
+        elif action_type == "music":
+            # Send options for music type
+            send_card(room_id, {
                 "type": "AdaptiveCard",
                 "version": "1.2",
                 "body": [
                     {
                         "type": "TextBlock",
-                        "text": response_text,
+                        "text": "What type of music would you like?",
                         "wrap": True
                     },
                     {
                         "type": "ActionSet",
                         "actions": [
                             {
-                                "type": "Action.OpenUrl",
-                                "title": "Watch on YouTube",
-                                "url": {
-                                            "music": "https://www.youtube.com/watch?v=5qap5aO4i9A",        # Lo-fi beats
-                                            "reword": "https://www.youtube.com/watch?v=v4GpJxLaIvY",       # AI writing tools overview
-                                            "docs": "https://www.youtube.com/watch?v=HXV3zeQKqGY",         # Google tips & search operators
-                                            "diagram": "https://www.youtube.com/watch?v=sF7h0QEVZ2I",      # Miro sketching tutorial
-                                            "voice": "https://www.youtube.com/watch?v=WDvS8pydYOg"         # Voice journaling for productivity
-                                        }
-                                        .get(action_type, "https://www.youtube.com")
+                                "type": "Action.Submit",
+                                "title": "🎶 Energy",
+                                "data": {"action": "music_energy"}
+                            },
+                            {
+                                "type": "Action.Submit",
+                                "title": "🌌 Chill",
+                                "data": {"action": "music_chill"}
+                            },
+                            {
+                                "type": "Action.Submit",
+                                "title": "🌬️ White Noise",
+                                "data": {"action": "music_white_noise"}
                             }
                         ]
                     }
                 ]
-            },
-            markdown="Here’s your result"
-        )
+            }, markdown="Choose your music type")
+        else:
+            fixed_responses = {
+                "music": "🎵 Great choice! Here's a focus playlist: https://example.com/focus-music",
+                "reword": "📚 Drop your text in the chat, and I'll help reword it for clarity.",
+                "docs": "🔍 Let's look up the official documentation. What topic do you need help with?",
+                "diagram": "✏️ Ready to sketch. Describe what you want visualised.",
+                "voice": "🎙️ Voice mode isn't ready yet—but you'll be able to speak to Kino soon!"
+            }
+
+            # Handle the new music type actions
+            if action_type == "music_energy":
+                response_text = "🎶 Here's an energetic playlist for you! Enjoy the music!"
+                youtube_link = "https://www.youtube.com/watch?v=wELOA2U7FPQ"  # Energy link
+            elif action_type == "music_chill":
+                response_text = "🌌 Here's some chill music for you. Relax and enjoy!"
+                youtube_link = "https://www.youtube.com/watch?v=26RIzBl0gPQ"  # Chill link
+            elif action_type == "music_white_noise":
+                response_text = "🌬️ Here's some white noise to help you focus."
+                youtube_link = "https://www.youtube.com/watch?v=yLOM8R6lbzg"  # White noise link
+            else:
+                response_text = fixed_responses.get(action_type, "Sorry, I didn't understand that action.")
+
+            # Send the final response with the YouTube link
+            send_card(
+                room_id,
+                {
+                    "type": "AdaptiveCard",
+                    "version": "1.2",
+                    "body": [
+                        {
+                            "type": "TextBlock",
+                            "text": response_text,
+                            "wrap": True
+                        },
+                        {
+                            "type": "ActionSet",
+                            "actions": [
+                                {
+                                    "type": "Action.OpenUrl",
+                                    "title": "Watch on YouTube",
+                                    "url": youtube_link
+                                }
+                            ]
+                        }
+                    ]
+                },
+                markdown="Here's your result"
+            )
     return "OK"
 
 if __name__ == "__main__":
