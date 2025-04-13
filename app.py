@@ -32,6 +32,7 @@ except Exception as e:
 
 # ✅ Flask app
 app = Flask(__name__)
+room_state = {}
 
 @app.route("/messages", methods=["POST"])
 def messages():
@@ -43,7 +44,48 @@ def messages():
         room_id = data["data"]["roomId"]
 
         if sender_id != BOT_ID:
-            send_card(room_id, get_homepage_card(), markdown="Welcome to Kino")
+            current_tool = room_state.get(room_id)
+
+            if current_tool == "reword":
+                user_message_id = data["data"]["id"]
+                message_data = requests.get(
+                    f"https://webexapis.com/v1/messages/{user_message_id}",
+                    headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
+                ).json()
+                input_text = message_data.get("text", "")
+
+                # OpenAI call
+                response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "gpt-3.5-turbo",
+                        "messages": [
+                            {"role": "user", "content": f"Please reword this in a simpler way: {input_text}"}
+                        ]
+                    }
+                ).json()
+
+                reply = response["choices"][0]["message"]["content"]
+
+                requests.post(
+                    "https://webexapis.com/v1/messages",
+                    headers={
+                        "Authorization": f"Bearer {WEBEX_TOKEN}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "roomId": room_id,
+                        "markdown": reply
+                    }
+                )
+
+                room_state.pop(room_id, None)
+            else:
+                send_card(room_id, get_homepage_card(), markdown="Welcome to Kino")
 
     elif data["resource"] == "attachmentActions" and data["event"] == "created":
         room_id = data["data"]["roomId"]
@@ -57,6 +99,9 @@ def messages():
 
         action_type = action_details.get("inputs", {}).get("action")
         print("🖱️ User clicked:", action_type)
+
+        if action_type in ["reword", "docs", "diagram", "voice"]:
+            room_state[room_id] = action_type
 
         if action_type == "show_features":
             send_card(room_id, get_feature_selector_card(), markdown="Choose a feature")
@@ -115,32 +160,46 @@ def messages():
             else:
                 response_text = fixed_responses.get(action_type, "Sorry, I didn't understand that action.")
 
-            # Send the final response with the YouTube link
-            send_card(
-                room_id,
-                {
-                    "type": "AdaptiveCard",
-                    "version": "1.2",
-                    "body": [
+                if action_type in ["music_energy", "music_chill", "music_white_noise"]:
+                    # Send the final response with the YouTube link
+                    send_card(
+                        room_id,
                         {
-                            "type": "TextBlock",
-                            "text": response_text,
-                            "wrap": True
-                        },
-                        {
-                            "type": "ActionSet",
-                            "actions": [
+                            "type": "AdaptiveCard",
+                            "version": "1.2",
+                            "body": [
                                 {
-                                    "type": "Action.OpenUrl",
-                                    "title": "Watch on YouTube",
-                                    "url": youtube_link
+                                    "type": "TextBlock",
+                                    "text": response_text,
+                                    "wrap": True
+                                },
+                                {
+                                    "type": "ActionSet",
+                                    "actions": [
+                                        {
+                                            "type": "Action.OpenUrl",
+                                            "title": "Watch on YouTube",
+                                            "url": youtube_link
+                                        }
+                                    ]
                                 }
                             ]
+                        },
+                        markdown="Here's your result"
+                    )
+                else:
+                    # Send a plain text message for non-music tools
+                    requests.post(
+                        "https://webexapis.com/v1/messages",
+                        headers={
+                            "Authorization": f"Bearer {WEBEX_TOKEN}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "roomId": room_id,
+                            "markdown": response_text
                         }
-                    ]
-                },
-                markdown="Here's your result"
-            )
+                    )
     return "OK"
 
 if __name__ == "__main__":
