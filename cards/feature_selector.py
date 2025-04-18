@@ -29,16 +29,6 @@ def get_feature_selector_card():
                     },
                     {
                         "type": "Action.Submit",
-                        "title": "🔍 Docs",
-                        "data": {"action": "docs"}
-                    },
-                    {
-                        "type": "Action.Submit",
-                        "title": "✏️ Diagram",
-                        "data": {"action": "diagram"}
-                    },
-                    {
-                        "type": "Action.Submit",
                         "title": "🎙️ Voice",
                         "data": {"action": "voice"}
                     },

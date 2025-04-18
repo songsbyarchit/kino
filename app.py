@@ -219,13 +219,6 @@ def messages():
                 ]
             }, markdown="Choose your music type")
         else:
-            fixed_responses = {
-                "music": "🎵 Great choice! Here's a focus playlist: https://example.com/focus-music",
-                "docs": "🔍 Let's look up the official documentation. What topic do you need help with?",
-                "diagram": "✏️ Ready to sketch. Describe what you want visualised.",
-                "voice": "🎙️ Voice mode isn't ready yet—but you'll be able to speak to Kino soon!"
-            }
-
             if action_type == "music_energy":
                 response_text = "🎶 Here's an energetic playlist for you! Enjoy the music!"
                 youtube_link = search_youtube("energetic focus music instrumental")
@@ -487,13 +480,10 @@ def messages():
             elif action_type == "back_home":
                 room_state.pop(room_id, None)
                 send_card(room_id, get_homepage_card(), markdown="Back to home 🏠")
-
+                
             else:
                 # Only show fallback if it wasn't handled by a known action
-                if action_type not in ["music_energy", "music_chill", "music_white_noise", "adjust_tone", "apply_vertical"]:
-                    response_text = fixed_responses.get(action_type, "Sorry, I didn't understand that action.")
-
-                    requests.post(
+                if action_type not in ["music_energy", "music_chill", "music_white_noise", "adjust_tone", "apply_vertical", "voice"]:                    requests.post(
                         "https://webexapis.com/v1/messages",
                         headers={
                             "Authorization": f"Bearer {WEBEX_TOKEN}",
@@ -501,7 +491,7 @@ def messages():
                         },
                         json={
                             "roomId": room_id,
-                            "markdown": response_text
+                            "markdown": "⚠️ I didn't understand that action."
                         }
                     )
     return "OK"

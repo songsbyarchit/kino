@@ -25,8 +25,6 @@ def get_homepage_card():
                 "facts": [
                     {"title": "🎵 Music", "value": "Suggests music based on your mood."},
                     {"title": "📚 Reword", "value": "Simplifies technical text using AI."},
-                    {"title": "🔍 Docs", "value": "Searches helpful documentation."},
-                    {"title": "✏️ Diagram", "value": "Prompts you to sketch ideas."},
                     {"title": "🎙️ Voice", "value": "Optional voice venting tool."}
                 ]
             },
