@@ -45,7 +45,7 @@ def messages():
         room_id = data["data"]["roomId"]
 
         if sender_id != BOT_ID:
-            current_tool = room_state.get(room_id)
+            current_tool = room_state.get(room_id, {}).get("tool")
 
             if current_tool == "reword":
                 user_message_id = data["data"]["id"]
@@ -54,6 +54,7 @@ def messages():
                     headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
                 ).json()
                 input_text = message_data.get("text", "")
+                room_state[room_id] = {"tool": "reword", "last_input": input_text}
 
                 # OpenAI call
                 response = requests.post(
@@ -143,7 +144,6 @@ def messages():
                 }
 
                 send_card(room_id, follow_up_card, markdown="Want to tweak the explanation?")
-                room_state.pop(room_id, None)
 
             else:
                 send_card(room_id, get_homepage_card(), markdown="Welcome to Kino")
@@ -162,7 +162,7 @@ def messages():
         print("🖱️ User clicked:", action_type)
 
         if action_type == "reword":
-            room_state[room_id] = "reword"
+            room_state[room_id] = {"tool": "reword", "last_input": None}
             requests.post(
                 "https://webexapis.com/v1/messages",
                 headers={
@@ -305,22 +305,56 @@ def messages():
 
             elif action_type == "adjust_tone":
                 tone = action_details.get("inputs", {}).get("level", "neutral")
-                tone_message = {
-                    "more_technical": "🧪 Got it! Next time, I’ll go deeper into the tech details.",
-                    "less_technical": "🪶 Sure! I’ll simplify things a bit more for you next time.",
-                }.get(tone, "👍 Thanks! I’ll adjust accordingly.")
+                last_state = room_state.get(room_id)
 
-                requests.post(
-                    "https://webexapis.com/v1/messages",
-                    headers={
-                        "Authorization": f"Bearer {WEBEX_TOKEN}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "roomId": room_id,
-                        "markdown": tone_message
-                    }
-                )
+                if last_state and last_state.get("tool") == "reword":
+                    input_text = last_state.get("last_input", "")
+
+                    if tone == "more_technical":
+                        prompt = f"Rewrite this in a more technical way, keeping all details and increasing technical depth: {input_text}"
+                    elif tone == "less_technical":
+                        prompt = f"Rewrite this in a simpler, less technical way for a general audience, but keep the meaning: {input_text}"
+                    else:
+                        prompt = input_text  # fallback
+
+                    response = requests.post(
+                        "https://api.openai.com/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": "gpt-3.5-turbo",
+                            "messages": [{"role": "user", "content": prompt}]
+                        }
+                    ).json()
+
+                    updated_reply = response["choices"][0]["message"]["content"]
+
+                    requests.post(
+                        "https://webexapis.com/v1/messages",
+                        headers={
+                            "Authorization": f"Bearer {WEBEX_TOKEN}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "roomId": room_id,
+                            "markdown": updated_reply
+                        }
+                    )
+
+                else:
+                    requests.post(
+                        "https://webexapis.com/v1/messages",
+                        headers={
+                            "Authorization": f"Bearer {WEBEX_TOKEN}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "roomId": room_id,
+                            "markdown": "⚠️ Sorry, I couldn't find the original message to adjust."
+                        }
+                    )
 
             elif action_type == "apply_vertical":
                 vertical = action_details.get("inputs", {}).get("vertical", "unspecified")
