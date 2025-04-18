@@ -8,7 +8,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # New test input
 input_text = """
-Multi-link Operation
 Multi-link operation (a.k.a MLO) – enables aggregation of multiple bands or channels. With MLO, the Wi-Fi 7 Access Point and Client devices can associate and simultaneously exchange traffic on multiple bands (or multiple channels in the same band if the access point has a dual 5 GHz radio). The distribution of traffic on different bands helps achieve higher throughput, reduced latency and improves reliability. This is a mandatory feature for Wi-Fi 7 certification.
 
 Main benefits of MLO:
