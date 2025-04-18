@@ -112,7 +112,6 @@ def messages():
                             {"title": "Manufacturing", "value": "manufacturing"},
                             {"title": "Retail", "value": "retail"},
                             {"title": "Government", "value": "government"},
-                            {"title": "Technology", "value": "technology"},
                             {"title": "Hospitality", "value": "hospitality"},
                             {"title": "Manufacturing", "value": "manufacturing"}
                         ]
@@ -454,6 +453,26 @@ def messages():
                             "markdown": reply
                         }
                     )
+
+                    # Send follow-up card to re-enter the reword tool
+                    send_card(room_id, {
+                        "type": "AdaptiveCard",
+                        "version": "1.2",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "text": "🔁 Want to reword something else?",
+                                "wrap": True
+                            }
+                        ],
+                        "actions": [
+                            {
+                                "type": "Action.Submit",
+                                "title": "📚 Back to Reword Tool",
+                                "data": {"action": "reword"}
+                            }
+                        ]
+                    }, markdown="Need to reword something else?")
 
             elif action_type == "back_home":
                 room_state.pop(room_id, None)
