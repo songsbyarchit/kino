@@ -156,8 +156,21 @@ def messages():
         action_type = action_details.get("inputs", {}).get("action")
         print("🖱️ User clicked:", action_type)
 
-        if action_type in ["reword", "docs", "diagram", "voice"]:
-            room_state[room_id] = action_type
+        if action_type == "reword":
+            room_state[room_id] = "reword"
+            requests.post(
+                "https://webexapis.com/v1/messages",
+                headers={
+                    "Authorization": f"Bearer {WEBEX_TOKEN}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "roomId": room_id,
+                    "markdown": "📚 Drop your text in the chat, and I'll help reword it for clarity."
+                }
+            )
+            return "OK"
+
 
         if action_type == "show_features":
             send_card(room_id, get_feature_selector_card(), markdown="Choose a feature")
@@ -197,7 +210,6 @@ def messages():
         else:
             fixed_responses = {
                 "music": "🎵 Great choice! Here's a focus playlist: https://example.com/focus-music",
-                "reword": "📚 Drop your text in the chat, and I'll help reword it for clarity.",
                 "docs": "🔍 Let's look up the official documentation. What topic do you need help with?",
                 "diagram": "✏️ Ready to sketch. Describe what you want visualised.",
                 "voice": "🎙️ Voice mode isn't ready yet—but you'll be able to speak to Kino soon!"
@@ -302,49 +314,10 @@ def messages():
                 )
 
             else:
-                response_text = fixed_responses.get(action_type, "Sorry, I didn't understand that action.")
+                # Only show fallback if it wasn't handled by a known action
+                if action_type not in ["music_energy", "music_chill", "music_white_noise", "adjust_tone", "apply_vertical"]:
+                    response_text = fixed_responses.get(action_type, "Sorry, I didn't understand that action.")
 
-                requests.post(
-                    "https://webexapis.com/v1/messages",
-                    headers={
-                        "Authorization": f"Bearer {WEBEX_TOKEN}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "roomId": room_id,
-                        "markdown": response_text
-                    }
-                )
-
-                if action_type in ["music_energy", "music_chill", "music_white_noise"]:
-                    # Send the final response with the YouTube link
-                    send_card(
-                        room_id,
-                        {
-                            "type": "AdaptiveCard",
-                            "version": "1.2",
-                            "body": [
-                                {
-                                    "type": "TextBlock",
-                                    "text": response_text,
-                                    "wrap": True
-                                },
-                                {
-                                    "type": "ActionSet",
-                                    "actions": [
-                                        {
-                                            "type": "Action.OpenUrl",
-                                            "title": "Watch on YouTube",
-                                            "url": youtube_link
-                                        }
-                                    ]
-                                }
-                            ]
-                        },
-                        markdown="Here's your result"
-                    )
-                else:
-                    # Send a plain text message for non-music tools
                     requests.post(
                         "https://webexapis.com/v1/messages",
                         headers={
