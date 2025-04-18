@@ -345,6 +345,26 @@ def messages():
                         }
                     )
 
+                    # Send follow-up card to let user re-enter the reword tool
+                    send_card(room_id, {
+                        "type": "AdaptiveCard",
+                        "version": "1.2",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "text": "🔁 Want to try rewording something else?",
+                                "wrap": True
+                            }
+                        ],
+                        "actions": [
+                            {
+                                "type": "Action.Submit",
+                                "title": "📚 Back to Reword Tool",
+                                "data": {"action": "reword"}
+                            }
+                        ]
+                    }, markdown="Need to reword something else?")
+
                 else:
                     requests.post(
                         "https://webexapis.com/v1/messages",
