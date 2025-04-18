@@ -41,6 +41,11 @@ def get_feature_selector_card():
                         "type": "Action.Submit",
                         "title": "🎙️ Voice",
                         "data": {"action": "voice"}
+                    },
+                    {
+                        "type": "Action.Submit",
+                        "title": "🏠 Back to Home",
+                        "data": {"action": "back_home"}
                     }
                 ]
             }

@@ -128,9 +128,14 @@ def messages():
                                     ]
                                 },
                                 {
-                                    "type": "Action.Submit",
-                                    "title": "🎯 Apply Vertical",
-                                    "data": {"action": "apply_vertical"}
+                                "type": "Action.Submit",
+                                "title": "🎯 Apply Vertical",
+                                "data": {"action": "apply_vertical"}
+                                },
+                                {
+                                "type": "Action.Submit",
+                                "title": "🏠 Back to Home",
+                                "data": {"action": "back_home"}
                                 }
                             ]
                         }
@@ -199,9 +204,14 @@ def messages():
                                 "data": {"action": "music_chill"}
                             },
                             {
-                                "type": "Action.Submit",
-                                "title": "🌬️ White Noise",
-                                "data": {"action": "music_white_noise"}
+                            "type": "Action.Submit",
+                            "title": "🌬️ White Noise",
+                            "data": {"action": "music_white_noise"}
+                            },
+                            {
+                            "type": "Action.Submit",
+                            "title": "🏠 Back to Home",
+                            "data": {"action": "back_home"}
                             }
                         ]
                     }
@@ -223,16 +233,21 @@ def messages():
                     "version": "1.2",
                     "body": [
                         {"type": "TextBlock", "text": response_text, "wrap": True},
-                        {
-                            "type": "ActionSet",
-                            "actions": [
-                                {
-                                    "type": "Action.OpenUrl",
-                                    "title": "Watch on YouTube",
-                                    "url": youtube_link
-                                }
-                            ]
-                        }
+                    {
+                        "type": "ActionSet",
+                        "actions": [
+                            {
+                                "type": "Action.OpenUrl",
+                                "title": "Watch on YouTube",
+                                "url": youtube_link
+                            },
+                            {
+                                "type": "Action.Submit",
+                                "title": "🏠 Back to Home",
+                                "data": {"action": "back_home"}
+                            }
+                        ]
+                    }
                     ]
                 }, markdown="Here's your result")
 
@@ -251,6 +266,11 @@ def messages():
                                     "type": "Action.OpenUrl",
                                     "title": "Watch on YouTube",
                                     "url": youtube_link
+                                },
+                                {
+                                    "type": "Action.Submit",
+                                    "title": "🏠 Back to Home",
+                                    "data": {"action": "back_home"}
                                 }
                             ]
                         }
@@ -272,6 +292,11 @@ def messages():
                                     "type": "Action.OpenUrl",
                                     "title": "Watch on YouTube",
                                     "url": youtube_link
+                                },
+                                {
+                                    "type": "Action.Submit",
+                                    "title": "🏠 Back to Home",
+                                    "data": {"action": "back_home"}
                                 }
                             ]
                         }
@@ -312,6 +337,10 @@ def messages():
                         "markdown": message
                     }
                 )
+
+            elif action_type == "back_home":
+                room_state.pop(room_id, None)
+                send_card(room_id, get_homepage_card(), markdown="Back to home 🏠")
 
             else:
                 # Only show fallback if it wasn't handled by a known action
