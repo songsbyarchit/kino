@@ -4,6 +4,7 @@ from cards.homepage import get_homepage_card
 from cards.feature_selector import get_feature_selector_card
 from utils.webex import send_card
 import os, requests, sys
+from utils.youtube_search import search_youtube
 
 # ✅ Load environment variables early
 load_dotenv()
@@ -204,7 +205,7 @@ def messages():
 
             if action_type == "music_energy":
                 response_text = "🎶 Here's an energetic playlist for you! Enjoy the music!"
-                youtube_link = "https://www.youtube.com/watch?v=wELOA2U7FPQ"
+                youtube_link = search_youtube("energetic focus music instrumental")
                 send_card(room_id, {
                     "type": "AdaptiveCard",
                     "version": "1.2",
@@ -225,7 +226,7 @@ def messages():
 
             elif action_type == "music_chill":
                 response_text = "🌌 Here's some chill music for you. Relax and enjoy!"
-                youtube_link = "https://www.youtube.com/watch?v=26RIzBl0gPQ"
+                youtube_link = search_youtube("chill lofi instrumental focus music")
                 send_card(room_id, {
                     "type": "AdaptiveCard",
                     "version": "1.2",
@@ -246,7 +247,7 @@ def messages():
 
             elif action_type == "music_white_noise":
                 response_text = "🌬️ Here's some white noise to help you focus."
-                youtube_link = "https://www.youtube.com/watch?v=yLOM8R6lbzg"
+                youtube_link = search_youtube("white noise for concentration 1 hour")
                 send_card(room_id, {
                     "type": "AdaptiveCard",
                     "version": "1.2",
