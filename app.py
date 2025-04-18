@@ -106,14 +106,16 @@ def messages():
                             "type": "Input.ChoiceSet",
                             "id": "vertical",
                             "style": "compact",
-                            "choices": [
-                                {"title": "Healthcare", "value": "healthcare"},
-                                {"title": "Education", "value": "education"},
-                                {"title": "Manufacturing", "value": "manufacturing"},
-                                {"title": "Finance", "value": "finance"},
-                                {"title": "Retail", "value": "retail"},
-                                {"title": "Other", "value": "other"}
-                            ]
+                        "choices": [
+                            {"title": "Healthcare", "value": "healthcare"},
+                            {"title": "Education", "value": "education"},
+                            {"title": "Manufacturing", "value": "manufacturing"},
+                            {"title": "Retail", "value": "retail"},
+                            {"title": "Government", "value": "government"},
+                            {"title": "Technology", "value": "technology"},
+                            {"title": "Hospitality", "value": "hospitality"},
+                            {"title": "Manufacturing", "value": "manufacturing"}
+                        ]
                         },
                         {
                             "type": "ActionSet",
