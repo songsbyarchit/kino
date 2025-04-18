@@ -360,6 +360,11 @@ def messages():
                                 "type": "Action.Submit",
                                 "title": "📚 Back to Reword Tool",
                                 "data": {"action": "reword"}
+                            },
+                            {
+                                "type": "Action.Submit",
+                                "title": "🏠 Back to Home",
+                                "data": {"action": "back_home"}
                             }
                         ]
                     }, markdown="Need to reword something else?")
@@ -470,6 +475,11 @@ def messages():
                                 "type": "Action.Submit",
                                 "title": "📚 Back to Reword Tool",
                                 "data": {"action": "reword"}
+                            },
+                            {
+                                "type": "Action.Submit",
+                                "title": "🏠 Back to Home",
+                                "data": {"action": "back_home"}
                             }
                         ]
                     }, markdown="Need to reword something else?")
