@@ -103,6 +103,19 @@ def messages():
                             "wrap": True
                         },
                         {
+                            "type": "Input.ChoiceSet",
+                            "id": "vertical",
+                            "style": "compact",
+                            "choices": [
+                                {"title": "Healthcare", "value": "healthcare"},
+                                {"title": "Education", "value": "education"},
+                                {"title": "Manufacturing", "value": "manufacturing"},
+                                {"title": "Finance", "value": "finance"},
+                                {"title": "Retail", "value": "retail"},
+                                {"title": "Other", "value": "other"}
+                            ]
+                        },
+                        {
                             "type": "ActionSet",
                             "actions": [
                                 {
@@ -116,27 +129,14 @@ def messages():
                                     "data": {"action": "adjust_tone", "level": "less_technical"}
                                 },
                                 {
-                                    "type": "Input.ChoiceSet",
-                                    "id": "vertical",
-                                    "style": "compact",
-                                    "choices": [
-                                        {"title": "Healthcare", "value": "healthcare"},
-                                        {"title": "Education", "value": "education"},
-                                        {"title": "Manufacturing", "value": "manufacturing"},
-                                        {"title": "Finance", "value": "finance"},
-                                        {"title": "Retail", "value": "retail"},
-                                        {"title": "Other", "value": "other"}
-                                    ]
+                                    "type": "Action.Submit",
+                                    "title": "🎯 Apply Vertical",
+                                    "data": {"action": "apply_vertical"}
                                 },
                                 {
-                                "type": "Action.Submit",
-                                "title": "🎯 Apply Vertical",
-                                "data": {"action": "apply_vertical"}
-                                },
-                                {
-                                "type": "Action.Submit",
-                                "title": "🏠 Back to Home",
-                                "data": {"action": "back_home"}
+                                    "type": "Action.Submit",
+                                    "title": "🏠 Back to Home",
+                                    "data": {"action": "back_home"}
                                 }
                             ]
                         }
@@ -357,20 +357,81 @@ def messages():
                     )
 
             elif action_type == "apply_vertical":
-                vertical = action_details.get("inputs", {}).get("vertical", "unspecified")
-                message = f"🎯 Great — I’ll tailor future answers for **{vertical.capitalize()}** use cases."
-
-                requests.post(
-                    "https://webexapis.com/v1/messages",
-                    headers={
-                        "Authorization": f"Bearer {WEBEX_TOKEN}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "roomId": room_id,
-                        "markdown": message
+                vertical = action_details.get("vertical") or action_details.get("inputs", {}).get("vertical")
+                if not vertical:
+                    # show vertical selection card
+                    vertical_card = {
+                        "type": "AdaptiveCard",
+                        "version": "1.2",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "text": "🎯 Select your target industry for rewording:",
+                                "wrap": True
+                            },
+                            {
+                                "type": "Input.ChoiceSet",
+                                "id": "vertical",
+                                "style": "compact",
+                                "isMultiSelect": False,
+                                "choices": [
+                                    {"title": "Healthcare", "value": "healthcare"},
+                                    {"title": "Education", "value": "education"},
+                                    {"title": "Manufacturing", "value": "manufacturing"},
+                                    {"title": "Finance", "value": "finance"},
+                                    {"title": "Retail", "value": "retail"},
+                                    {"title": "Other", "value": "other"}
+                                ]
+                            }
+                        ],
+                        "actions": [
+                            {
+                                "type": "Action.Submit",
+                                "title": "Apply Vertical",
+                                "data": {"action": "apply_vertical"}
+                            }
+                        ]
                     }
-                )
+
+                    send_card(room_id, vertical_card, markdown="Pick your industry so I can tailor it.")
+                    return "OK"
+                last_state = room_state.get(room_id)
+
+                if last_state and last_state.get("tool") == "reword":
+                    input_text = last_state.get("last_input", "")
+
+                    prompt = (
+                        f"Rewrite this so it sounds like a helpful technical expert "
+                        f"explaining it to someone in the {vertical} industry. "
+                        f"Preserve the technical accuracy and detail. Avoid dumbing it down. "
+                        f"Make examples and tone specific to {vertical}: {input_text}"
+                    )
+
+                    response = requests.post(
+                        "https://api.openai.com/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": "gpt-3.5-turbo",
+                            "messages": [{"role": "user", "content": prompt}]
+                        }
+                    ).json()
+
+                    reply = response["choices"][0]["message"]["content"]
+
+                    requests.post(
+                        "https://webexapis.com/v1/messages",
+                        headers={
+                            "Authorization": f"Bearer {WEBEX_TOKEN}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "roomId": room_id,
+                            "markdown": reply
+                        }
+                    )
 
             elif action_type == "back_home":
                 room_state.pop(room_id, None)
