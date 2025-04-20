@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, render_template_string
 from dotenv import load_dotenv
 from cards.homepage import get_homepage_card
 from cards.feature_selector import get_feature_selector_card
@@ -580,6 +580,54 @@ def messages():
                         }
                     )
     return "OK"
+
+@app.route("/voice")
+def voice_recorder():
+    style = request.args.get("style", "support")
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Voice Recorder</title>
+        <style>
+            body { font-family: sans-serif; background: #111; color: #eee; text-align: center; padding: 2em; }
+            button { padding: 1em 2em; font-size: 1em; margin: 1em; }
+            audio { margin-top: 1em; }
+        </style>
+    </head>
+    <body>
+        <h2>🎤 Voice Recorder – Style: {{ style }}</h2>
+        <p>Tap to start and stop recording. You can preview before submission.</p>
+        <button id="recordBtn">Start Recording</button>
+        <audio id="audioPreview" controls></audio>
+
+        <script>
+            let chunks = [];
+            let recorder;
+            const recordBtn = document.getElementById("recordBtn");
+            const audioPreview = document.getElementById("audioPreview");
+
+            recordBtn.onclick = async () => {
+                if (!recorder || recorder.state === "inactive") {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    recorder = new MediaRecorder(stream);
+                    chunks = [];
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: "audio/webm" });
+                        audioPreview.src = URL.createObjectURL(blob);
+                    };
+                    recorder.start();
+                    recordBtn.textContent = "Stop Recording";
+                } else if (recorder.state === "recording") {
+                    recorder.stop();
+                    recordBtn.textContent = "Start Recording";
+                }
+            };
+        </script>
+    </body>
+    </html>
+    """, style=style)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5050)
