@@ -2,6 +2,7 @@ from flask import Flask, request
 from dotenv import load_dotenv
 from cards.homepage import get_homepage_card
 from cards.feature_selector import get_feature_selector_card
+from cards.voice_tile import voice_tile_card
 from utils.webex import send_card
 import os, requests, sys
 from utils.youtube_search import search_youtube
@@ -477,41 +478,90 @@ def messages():
             elif action_type == "back_home":
                 room_state.pop(room_id, None)
                 send_card(room_id, get_homepage_card(), markdown="Back to home 🏠")
+
+            elif action_type == "open_voice_with_style":
+                selected_style = action_details.get("inputs", {}).get("voice_style")
+                if not selected_style:
+                    requests.post(
+                        "https://webexapis.com/v1/messages",
+                        headers={
+                            "Authorization": f"Bearer {WEBEX_TOKEN}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "roomId": room_id,
+                            "markdown": "⚠️ Please select a response style (from the dropdown) before continuing."
+                        }
+                    )
+                else:
+                    voice_url = f"https://jennet-amazing-sailfish.ngrok-free.app/voice?style={selected_style}"
+                    send_card(room_id, {
+                        "type": "AdaptiveCard",
+                        "version": "1.2",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "text": f"🎧 Opening voice recorder with '{selected_style}' style.",
+                                "wrap": True
+                            }
+                        ],
+                        "actions": [
+                            {
+                                "type": "Action.OpenUrl",
+                                "title": "🎤 Open Recorder",
+                                "url": voice_url
+                            },
+                            {
+                                "type": "Action.Submit",
+                                "title": "🏠 Back to Home",
+                                "data": {"action": "back_home"}
+                            }
+                        ]
+                    }, markdown="Voice recorder ready")
             
             elif action_type == "voice":
-                voice_tile_card = {
+                send_card(room_id, {
                     "type": "AdaptiveCard",
                     "version": "1.2",
                     "body": [
                         {
                             "type": "TextBlock",
-                            "text": "🎙️ Voice Recording",
+                            "text": "🎙️ Voice Recorder",
                             "wrap": True,
                             "weight": "Bolder",
                             "size": "Medium"
                         },
                         {
                             "type": "TextBlock",
-                            "text": "Click below to start recording your thoughts.",
+                            "text": "Select how you'd like me to respond to your voice message:",
                             "wrap": True
                         },
                         {
-                            "type": "ActionSet",
-                            "actions": [
-                                {
-                                    "type": "Action.OpenUrl",
-                                    "title": "🎧 Open Voice Recorder",
-                                    "url": "https://jennet-amazing-sailfish.ngrok-free.app/voice"
-                                },
-                                {
-                                    "type": "Action.Submit",
-                                    "title": "🏠 Back to Home",
-                                    "data": {"action": "back_home"}
-                                }
+                            "type": "Input.ChoiceSet",
+                            "id": "voice_style",
+                            "style": "compact",
+                            "isMultiSelect": False,
+                            "placeholder": "Choose one...",
+                            "choices": [
+                                {"title": "🗂️ Organise into Action Steps", "value": "action"},
+                                {"title": "💖 Supportive Message", "value": "support"},
+                                {"title": "🔥 Motivation Boost", "value": "motivate"}
                             ]
                         }
+                    ],
+                    "actions": [
+                        {
+                            "type": "Action.Submit",
+                            "title": "🎧 Continue to Recorder",
+                            "data": {"action": "open_voice_with_style"}
+                        },
+                        {
+                            "type": "Action.Submit",
+                            "title": "🏠 Back to Home",
+                            "data": {"action": "back_home"}
+                        }
                     ]
-                }
+                }, markdown="Pick a style before recording")
 
                 # Send the Voice recording tile/card to the user on feature selection
                 send_card(room_id, voice_tile_card, markdown="Voice Recording Feature Selected")
