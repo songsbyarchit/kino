@@ -6,7 +6,6 @@ from utils.webex import send_card
 import os, requests, sys
 from utils.youtube_search import search_youtube
 
-# ✅ Load environment variables early
 load_dotenv()
 WEBEX_TOKEN = os.getenv("WEBEX_BOT_TOKEN")
 
@@ -16,7 +15,6 @@ if not WEBEX_TOKEN:
 
 print("🔑 Loaded token (first 20 chars):", WEBEX_TOKEN[:20])
 
-# ✅ Fetch bot ID with error handling
 response = requests.get(
     "https://webexapis.com/v1/people/me",
     headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
@@ -31,7 +29,6 @@ except Exception as e:
     print("❌ ERROR: Failed to fetch bot ID. Response:", response.text)
     sys.exit(1)
 
-# ✅ Flask app
 app = Flask(__name__)
 room_state = {}
 
@@ -85,7 +82,7 @@ def messages():
                     }
                 )
 
-                # 🎛️ Follow-up card to tweak the response
+                #Follow-up card to tweak the response
                 follow_up_card = {
                     "type": "AdaptiveCard",
                     "version": "1.2",
@@ -153,7 +150,7 @@ def messages():
         room_id = data["data"]["roomId"]
         action_id = data["data"]["id"]
 
-        # ✅ Fetch card action data
+        #Fetch card action data
         action_details = requests.get(
             f"https://webexapis.com/v1/attachment/actions/{action_id}",
             headers={"Authorization": f"Bearer {WEBEX_TOKEN}"}
@@ -480,7 +477,45 @@ def messages():
             elif action_type == "back_home":
                 room_state.pop(room_id, None)
                 send_card(room_id, get_homepage_card(), markdown="Back to home 🏠")
-                
+            
+            elif action_type == "voice":
+                voice_tile_card = {
+                    "type": "AdaptiveCard",
+                    "version": "1.2",
+                    "body": [
+                        {
+                            "type": "TextBlock",
+                            "text": "🎙️ Voice Recording",
+                            "wrap": True,
+                            "weight": "Bolder",
+                            "size": "Medium"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": "Click below to start recording your thoughts.",
+                            "wrap": True
+                        },
+                        {
+                            "type": "ActionSet",
+                            "actions": [
+                                {
+                                    "type": "Action.OpenUrl",
+                                    "title": "🎧 Open Voice Recorder",
+                                    "url": "https://jennet-amazing-sailfish.ngrok-free.app/voice"
+                                },
+                                {
+                                    "type": "Action.Submit",
+                                    "title": "🏠 Back to Home",
+                                    "data": {"action": "back_home"}
+                                }
+                            ]
+                        }
+                    ]
+                }
+
+                # Send the Voice recording tile/card to the user on feature selection
+                send_card(room_id, voice_tile_card, markdown="Voice Recording Feature Selected")
+
             else:
                 # Only show fallback if it wasn't handled by a known action
                 if action_type not in ["music_energy", "music_chill", "music_white_noise", "adjust_tone", "apply_vertical", "voice"]:                    requests.post(
