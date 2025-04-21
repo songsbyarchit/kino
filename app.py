@@ -600,6 +600,8 @@ def voice_recorder():
         <p>Tap to start and stop recording. You can preview before submission.</p>
         <button id="recordBtn">Start Recording</button>
         <audio id="audioPreview" controls></audio>
+        <br>
+        <button id="uploadBtn" style="display:none;">Send to Webex Bot</button>
 
         <script>
             let chunks = [];
@@ -616,6 +618,8 @@ def voice_recorder():
                     recorder.onstop = () => {
                         const blob = new Blob(chunks, { type: "audio/webm" });
                         audioPreview.src = URL.createObjectURL(blob);
+                        audioPreview.blob = blob;
+                        document.getElementById("uploadBtn").style.display = "inline-block";
                     };
                     recorder.start();
                     recordBtn.textContent = "Stop Recording";
@@ -624,10 +628,88 @@ def voice_recorder():
                     recordBtn.textContent = "Start Recording";
                 }
             };
+                                  
+            document.getElementById("uploadBtn").onclick = async () => {
+                const formData = new FormData();
+                formData.append("audio", audioPreview.blob, "recording.webm");
+
+                const res = await fetch(`/voice?style={{ style }}`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (res.ok) {
+                    alert("✅ Sent to Webex Bot! Returning to the app...");
+                    window.location.href = "webexteams://";
+                } else {
+                    alert("❌ Upload failed. Please try again.");
+                }
+            };
         </script>
     </body>
     </html>
     """, style=style)
+
+@app.route("/voice", methods=["POST"])
+def handle_voice_upload():
+    style = request.args.get("style")
+    audio = request.files.get("audio")
+
+    if not style or not audio:
+        return {"error": "Missing style or audio file"}, 400
+
+    filename = f"/tmp/{audio.filename}"
+    audio.save(filename)
+
+    print(f"🎙️ Received voice recording with style: {style}")
+    print(f"📁 Saved file to: {filename}")
+
+    # Transcribe using OpenAI Whisper
+    with open(filename, "rb") as audio_file:
+        transcript_response = requests.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            headers={
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"
+            },
+            files={
+                "file": audio_file,
+                "model": (None, "whisper-1")
+            }
+        )
+
+    transcript = transcript_response.json().get("text", "")
+    print("📝 Transcript:", transcript)
+
+    # Format prompt based on selected style
+    if style == "action":
+        prompt = f"Turn this into an organised list of action steps: {transcript}"
+    elif style == "support":
+        prompt = f"Convert this into a gentle, encouraging self-care message: {transcript}"
+    elif style == "motivate":
+        prompt = f"Turn this into a concise motivational boost using their own words: {transcript}"
+    else:
+        prompt = transcript  # fallback
+
+    # Get AI-generated response
+    response = requests.post(
+        "https://api.openai.com/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": prompt}]
+        }
+    ).json()
+
+    reply = response["choices"][0]["message"]["content"]
+    print("🤖 OpenAI response:", reply)
+
+    # Cleanup saved file
+    os.remove(filename)
+
+    return {"transcript": transcript, "response": reply}, 200
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5050)
